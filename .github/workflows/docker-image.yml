@@ -1,0 +1,22 @@
+name: Create and publish a Docker image
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ v* ]
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+  
+    - name: Build the Docker image
+      run: |
+        docker login --username enishowk --password ${{ secrets.GH_PAT }} ghcr.io
+        docker build . --tag ghcr.io/${{ github.repository_owner }}/debridarr:latest
+        docker push ghcr.io/${{ github.repository_owner }}/debridarr:latest
