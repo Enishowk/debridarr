@@ -12,16 +12,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
     - name: Set lower case owner name
       run: |
         echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
       env:
         OWNER: '${{ github.repository_owner }}'
-
-    - name: Build the Docker image
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${OWNER_LC}
+        password: ${{ secrets.GH_PAT }}
+    
+    - name: Checkout repository
+      uses: actions/checkout@v5
+    
+    - name: Build and push the Docker image
       run: |
-        docker login --username enishowk --password ${{ secrets.GH_PAT }} ghcr.io
         docker build . --tag ghcr.io/${OWNER_LC}/debridarr:latest
         docker push ghcr.io/${OWNER_LC}/debridarr:latest
