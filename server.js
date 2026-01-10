@@ -35,6 +35,13 @@ if (!isProduction) {
   app.use(base, sirv("./dist/client", { extensions: [] }));
 }
 
+app.get("/config", (_req, res) => {
+  res.json({
+    moviesPath: process.env.MOVIES_PATH,
+    seriesPath: process.env.SERIES_PATH,
+  });
+});
+
 app.post("/unlock", async (req, res) => {
   const links = req.body.links;
 
@@ -70,11 +77,11 @@ app.get("/download", async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.flushHeaders && res.flushHeaders();
 
-  const filePath = `${process.env.NAS_MOUNT_PATH}${dirPath}/${filename}`;
+  const filePath = `${process.env.ROOT_PATH}${dirPath}/${filename}`;
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     res.write(
-      `data: ${JSON.stringify({ error: `Path ${process.env.NAS_MOUNT_PATH}${dirPath} doesn't exist` })}\n\n`,
+      `data: ${JSON.stringify({ error: `Path ${process.env.ROOT_PATH}${dirPath} doesn't exist` })}\n\n`,
     );
     return res.end();
   }

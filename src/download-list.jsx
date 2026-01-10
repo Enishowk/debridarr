@@ -1,10 +1,6 @@
 import { useState } from "preact/hooks";
-import {
-  formatBytes,
-  formatFilename,
-  formatTime,
-  getDefaultPath,
-} from "./utils";
+import { useConfig } from "./config-context";
+import { formatBytes, formatFilename, formatTime, isSeries } from "./utils";
 
 const DOWNLOAD_STATUS = {
   NOT_STARTED: "NOT_STARTED",
@@ -20,12 +16,15 @@ const DOWNLOAD_STATUS_CLASSNAME = {
 };
 
 function DownloadItem({ unlockLink }) {
+  const { paths } = useConfig();
   const [error, setError] = useState("");
   const [downloadStatus, setDownloadStatus] = useState(
     DOWNLOAD_STATUS.NOT_STARTED,
   );
   const [filename, setFilename] = useState(unlockLink.data?.filename || "");
-  const [path, setPath] = useState(getDefaultPath(unlockLink.data?.filename));
+  const [path, setPath] = useState(
+    isSeries(unlockLink.data?.filename) ? paths.seriesPath : paths.moviesPath,
+  );
 
   const [eventSourceState, setEventSourceState] = useState(0);
   const [transfer, setTransfer] = useState({

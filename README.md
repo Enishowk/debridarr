@@ -9,21 +9,10 @@ An app that unlocks links and downloads files.
 
 ## Deployment
 
-To deploy this project run
+To deploy this project with Docker, change the variables in docker-compose.yml and run
 
 ```bash
-  cp .env.example .env
-  npm run install
-  npm run build
-  npm run prod
-```
-
-With Docker
-
-```bash
-  cp .env.example .env
-  docker build . -t debridarr:latest
-  docker compose up
+  docker compose up -d
 ```
 
 ## Development

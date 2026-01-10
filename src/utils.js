@@ -9,14 +9,12 @@ export const extractLinks = (text) => {
     );
 };
 
-export const getDefaultPath = (filename) => {
+export const isSeries = (filename) => {
   if (!filename) {
     return;
   }
   const pattern = /S(\d{1,2})E(\d{1,2})|S(\d{1,2})/i; // Detect if filename is a serie
-  return filename.match(pattern)
-    ? import.meta.env.VITE_SERIES_PATH
-    : import.meta.env.VITE_MOVIES_PATH;
+  return filename.match(pattern);
 };
 
 export const formatBytes = (bytes) => {

@@ -1,14 +1,17 @@
 services:
   debridarr:
     container_name: debridarr
+    image: ghcr.io/enishowk/debridarr:latest
     restart: unless-stopped
-    build:
-      context: .
-      dockerfile: Dockerfile
     ports:
       - 5173:5173
-    env_file:
-      - .env
     user: "${PUID}:${PGID}"
+    # If you need to mount additional volumes
     # volumes:
-    # - /volume2:/volume2
+    # - /host_volume:/container_volume
+    environment:
+      - ALL_DEBRID_API_KEY=your_api_key_here
+      - ROOT_PATH=/mnt/nas/downloads
+      # Optional, relative paths use by the front to pre-fill the file path. ROOT_PATH/MOVIES_PATH
+      - MOVIES_PATH=/movies # Optional
+      - SERIES_PATH=/series # Optional
