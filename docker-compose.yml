@@ -1,0 +1,14 @@
+services:
+  debridarr:
+    container_name: debridarr
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 5173:5173
+    env_file:
+      - .env
+    user: "${PUID}:${PGID}"
+    # volumes:
+    # - /volume2:/volume2
