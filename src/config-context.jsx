@@ -12,7 +12,6 @@ export function ConfigProvider({ children }) {
   useEffect(() => {
     fetch("/config").then((response) => {
       response.json().then((config) => {
-        console.log(config);
         setPaths({
           seriesPath: config.seriesPath,
           moviesPath: config.moviesPath,

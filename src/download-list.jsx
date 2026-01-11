@@ -15,6 +15,15 @@ const DOWNLOAD_STATUS_CLASSNAME = {
   ERROR: "error",
 };
 
+const TRANSFER_INIT = {
+  id: undefined,
+  total: 0,
+  downloaded: 0,
+  progress: 0,
+  speedMbps: 0,
+  remainingTime: 0,
+};
+
 function DownloadItem({ unlockLink }) {
   const { paths } = useConfig();
   const [error, setError] = useState("");
@@ -25,20 +34,14 @@ function DownloadItem({ unlockLink }) {
   const [path, setPath] = useState(
     isSeries(unlockLink.data?.filename) ? paths.seriesPath : paths.moviesPath,
   );
-
   const [eventSourceState, setEventSourceState] = useState(0);
-  const [transfer, setTransfer] = useState({
-    total: 0,
-    downloaded: 0,
-    progress: 0,
-    speedMbps: 0,
-    remainingTime: 0,
-  });
+  const [transfer, setTransfer] = useState(TRANSFER_INIT);
 
   const handleClick = () => {
     if (eventSourceState === 1) {
       return;
     }
+    setError("");
 
     const params = new URLSearchParams({
       url: unlockLink.data.link,
@@ -67,6 +70,7 @@ function DownloadItem({ unlockLink }) {
       }
 
       setTransfer({
+        id: data.id,
         total: data.total,
         downloaded: data.downloaded,
         progress: data.progress,
@@ -76,6 +80,7 @@ function DownloadItem({ unlockLink }) {
 
       if (data.done) {
         setDownloadStatus(DOWNLOAD_STATUS.COMPLETED);
+        setEventSourceState(0);
         es.close();
       }
     };
@@ -86,6 +91,15 @@ function DownloadItem({ unlockLink }) {
       return;
     }
     setFilename(formatFilename(filename));
+  };
+
+  const handleCancelClick = async () => {
+    fetch(`/cancel/${transfer.id}`, { method: "DELETE" }).then((response) => {
+      response.json().then((resp) => {
+        setError(resp.status);
+        setTransfer(TRANSFER_INIT);
+      });
+    });
   };
 
   return (
@@ -119,13 +133,19 @@ function DownloadItem({ unlockLink }) {
             value={path}
             onChange={(e) => setPath(e.target.value)}
           />
-          <button
-            className="btn btn-primary"
-            onClick={handleClick}
-            disabled={eventSourceState !== 0}
-          >
-            Download
-          </button>
+          {eventSourceState === 1 ? (
+            <button className="btn btn-error" onClick={handleCancelClick}>
+              ❌ Cancel
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary"
+              onClick={handleClick}
+              disabled={eventSourceState !== 0}
+            >
+              Download
+            </button>
+          )}
         </div>
         {transfer.progress > 0 && (
           <>

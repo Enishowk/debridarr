@@ -2,7 +2,6 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 
-// Constants
 const isProduction = process.env.NODE_ENV === "production";
 const port = process.env.PORT || 5173;
 const base = process.env.BASE || "/";
@@ -11,6 +10,9 @@ const base = process.env.BASE || "/";
 const templateHtml = isProduction
   ? await fs.promises.readFile("./dist/client/index.html", "utf-8")
   : "";
+
+// AbortControllers
+const controllers = new Map();
 
 // Create http server
 const app = express();
@@ -37,8 +39,8 @@ if (!isProduction) {
 
 app.get("/config", (_req, res) => {
   res.json({
-    moviesPath: process.env.MOVIES_PATH,
-    seriesPath: process.env.SERIES_PATH,
+    moviesPath: process.env.MOVIES_PATH || "/",
+    seriesPath: process.env.SERIES_PATH || "/",
   });
 });
 
@@ -68,15 +70,14 @@ app.post("/unlock", async (req, res) => {
 });
 
 app.get("/download", async (req, res) => {
-  const { url, dirPath, filename } = req.query;
-  const response = await fetch(url);
-  // Headers SSE & CORS (ajuste l'origine pour la prod)
+  // Headers SSE & CORS
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.flushHeaders && res.flushHeaders();
 
+  const { url, dirPath, filename } = req.query;
   const filePath = `${process.env.ROOT_PATH}${dirPath}/${filename}`;
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
@@ -90,44 +91,76 @@ app.get("/download", async (req, res) => {
     return res.end();
   }
 
+  const controller = new AbortController();
+  const uuid = crypto.randomUUID();
+  const fileStream = fs.createWriteStream(filePath);
+  controllers.set(uuid, controller);
+  const response = await fetch(url, {
+    method: "GET",
+    signal: controller.signal,
+  });
+
+  fileStream.on("error", (err) => {
+    if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
+      fs.unlinkSync(filePath);
+    }
+    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+  });
+
   const total = response.headers.get("content-length")
     ? Number(response.headers.get("content-length"))
     : null;
   let downloaded = 0;
   let startTime = Date.now();
   let lastUpdate = 0;
+  try {
+    const reader = response.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      fileStream.write(Buffer.from(value));
+      downloaded += value.length;
 
-  const fileStream = fs.createWriteStream(filePath);
-  const reader = response.body.getReader();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    fileStream.write(Buffer.from(value));
-    downloaded += value.length;
+      const now = Date.now();
+      if (now - lastUpdate >= 1000) {
+        const elapsed = (now - startTime) / 1000; // in seconds
+        const speedMbps = (downloaded / elapsed / 1_000_000).toFixed(2); // convert to MB/s
+        const leftMb = Math.round((total - downloaded) / 1_000_000);
+        const remainingTime = Math.round(leftMb / speedMbps);
+        const progress = Math.round((downloaded / total) * 100);
 
-    const now = Date.now();
-    if (now - lastUpdate >= 1000) {
-      const elapsed = (now - startTime) / 1000; // in seconds
-      const speedMbps = (downloaded / elapsed / 1_000_000).toFixed(2); // convert to MB/s
-      const leftMb = Math.round((total - downloaded) / 1_000_000);
-      const remainingTime = Math.round(leftMb / speedMbps);
-      const progress = Math.round((downloaded / total) * 100);
-
-      res.write(
-        `data: ${JSON.stringify({ total, downloaded, progress, speedMbps, remainingTime })}\n\n`,
-      );
-      if (isProduction) {
-        res.flush();
+        res.write(
+          `data: ${JSON.stringify({ id: uuid, total, downloaded, progress, speedMbps, remainingTime })}\n\n`,
+        );
+        if (isProduction) {
+          res.flush();
+        }
+        lastUpdate = now;
       }
-      lastUpdate = now;
     }
+
+    fileStream.end();
+    controllers.delete(uuid);
+    res.write(
+      `data: ${JSON.stringify({ done: true, id: uuid, total, downloaded, progress: 100 })}\n\n`,
+    );
+    res.end();
+  } catch (error) {
+    fileStream.destroy("stream destroyed");
+    controllers.delete(uuid);
+    res.end();
+  }
+});
+
+app.delete("/cancel/:id", async (req, res) => {
+  const id = req.params.id;
+  const controller = controllers.get(id);
+  if (controller) {
+    controller.abort();
+    return res.status(200).json({ status: "Canceled" });
   }
 
-  fileStream.end();
-  res.write(
-    `data: ${JSON.stringify({ done: true, total, downloaded, progress: 100 })}\n\n`,
-  );
-  res.end();
+  return res.status(404).json({ error: "Download not found" });
 });
 
 // Serve HTML

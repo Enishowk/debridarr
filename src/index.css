@@ -151,6 +151,11 @@ input:focus {
     gap: 8px;
 }
 
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -160,23 +165,8 @@ input:focus {
     box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
 }
 
-.btn-primary:disabled,
-.btn-secondary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.btn-secondary {
-    background: #f3f4f6;
-    color: #333;
-}
-
-.btn-secondary:hover {
-    background: #e5e7eb;
-}
-
-.btn-secondary:active {
-    background: #d1d5db;
+.btn-error {
+    color: #ef4444;
 }
 
 .spinner {

@@ -56,7 +56,7 @@ export function UnlockForm({ setUnlockLinks }) {
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? <span className="spinner" /> : "Unlock"}
           </button>
-          <button type="reset" className="btn btn-secondary" disabled={loading}>
+          <button type="reset" className="btn" disabled={loading}>
             Reset
           </button>
         </div>
