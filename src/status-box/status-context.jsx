@@ -19,7 +19,7 @@ export function StatusProvider({ children }) {
 
     timeoutRef.current = setTimeout(() => {
       setStatusState({ type: "ok", message: "" });
-    }, 4000);
+    }, 5000);
   }, []);
 
   const value = {

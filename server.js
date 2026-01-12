@@ -37,10 +37,23 @@ if (!isProduction) {
   app.use(base, sirv("./dist/client", { extensions: [] }));
 }
 
-app.get("/config", (_req, res) => {
+app.get("/config", async (_req, res) => {
+  const response = await fetch("https://api.alldebrid.com/v4/user", {
+    headers: { Authorization: `Bearer ${process.env.ALL_DEBRID_API_KEY}` },
+  });
+  const json = await response.json();
+  const diffMs = new Date(json.data.user.premiumUntil * 1000) - new Date();
+  const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
   res.json({
     moviesPath: process.env.MOVIES_PATH || "/",
     seriesPath: process.env.SERIES_PATH || "/",
+    user: {
+      username: json.data.user.username,
+      isPremium: json.data.user.isPremium,
+      daysLeft,
+      fidelityPoints: json.data.user.fidelityPoints,
+    },
   });
 });
 

@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { ConfigProvider } from "./config-context";
 import { DownloadList } from "./download-list";
+import { Footer } from "./footer";
 import { StatusBox } from "./status-box/status-box";
 import { StatusProvider } from "./status-box/status-context";
 import { UnlockForm } from "./unlock-form";
@@ -29,9 +30,7 @@ export function App() {
             <DownloadList unlockLinks={unlockLinks} />
           </main>
 
-          <footer className="footer">
-            <p>Debridarr v{APP_VERSION}</p>
-          </footer>
+          <Footer />
         </div>
       </StatusProvider>
     </ConfigProvider>

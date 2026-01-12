@@ -8,6 +8,7 @@ export function ConfigProvider({ children }) {
     seriesPath: "/",
     moviesPath: "/",
   });
+  const [user, setUser] = useState({});
 
   useEffect(() => {
     fetch("/config").then((response) => {
@@ -16,12 +17,14 @@ export function ConfigProvider({ children }) {
           seriesPath: config.seriesPath,
           moviesPath: config.moviesPath,
         });
+        setUser(config.user);
       });
     });
   }, []);
 
   const value = {
     paths,
+    user,
   };
 
   return (
