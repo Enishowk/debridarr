@@ -1,4 +1,3 @@
-
 # Debridarr
 
 An app that unlocks links with Alldebrid and downloads files.
@@ -18,11 +17,12 @@ To deploy this project with Docker, change the variables in docker-compose.yml a
 Or
 
 ```bash
-docker run --name debridarr \
+docker run -d \
+  --name debridarr \
   -p 5173:5173 \
-  -u 1000:1000 \
+  -u $(id -u):$(id -g) \
   -e ALL_DEBRID_API_KEY=your_api_key_here \
-  -e ROOT_PATH=/your_path \ 
+  -e ROOT_PATH=/your_path \
   -e MOVIES_PATH=/movies \
   -e SERIES_PATH=/series \
   ghcr.io/enishowk/debridarr:latest

@@ -193,11 +193,36 @@ input:focus {
 }
 
 .download-item {
+    position: relative;
     padding: 18px;
     border-radius: 10px;
     border-left: 4px solid #000;
     background: #f9fafb;
     transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.download-item-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.download-item-close:hover {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
+.download-item-close:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .download-item input {

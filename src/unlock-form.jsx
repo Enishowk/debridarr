@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 import { useStatus } from "./status-box/status-context";
 import { extractLinks } from "./utils";
 
-export function UnlockForm({ setUnlockLinks }) {
+export function UnlockForm({ addUnlockLinks }) {
   const { setStatus } = useStatus();
   const [loading, setLoading] = useState(false);
 
@@ -30,7 +30,7 @@ export function UnlockForm({ setUnlockLinks }) {
         body: JSON.stringify({ links }),
       });
       const data = await response.json();
-      setUnlockLinks(data.results);
+      addUnlockLinks(data.results);
     } catch (error) {
       setStatus("error", error.message);
     } finally {

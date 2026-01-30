@@ -9,6 +9,20 @@ import { UnlockForm } from "./unlock-form";
 export function App() {
   const [unlockLinks, setUnlockLinks] = useState([]);
 
+  const addUnlockLinks = (links) => {
+    setUnlockLinks((prevLinks) => {
+      const newLinks = links.map((link) => ({
+        ...link,
+        id: crypto.randomUUID(),
+      }));
+      return [...prevLinks, ...newLinks];
+    });
+  };
+
+  const removeUnlockLink = (id) => {
+    setUnlockLinks((prevArray) => prevArray.filter((link) => link.id !== id));
+  };
+
   return (
     <ConfigProvider>
       <StatusProvider>
@@ -25,9 +39,12 @@ export function App() {
 
           <main>
             <StatusBox />
-            <UnlockForm setUnlockLinks={setUnlockLinks} />
+            <UnlockForm addUnlockLinks={addUnlockLinks} />
 
-            <DownloadList unlockLinks={unlockLinks} />
+            <DownloadList
+              unlockLinks={unlockLinks}
+              removeUnlockLink={removeUnlockLink}
+            />
           </main>
 
           <Footer />

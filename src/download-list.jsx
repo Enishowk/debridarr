@@ -24,7 +24,7 @@ const TRANSFER_INIT = {
   remainingTime: 0,
 };
 
-function DownloadItem({ unlockLink }) {
+function DownloadItem({ unlockLink, onRemove }) {
   const { paths } = useConfig();
   const [error, setError] = useState("");
   const [downloadStatus, setDownloadStatus] = useState(
@@ -106,6 +106,13 @@ function DownloadItem({ unlockLink }) {
     <div
       className={`download-item ${DOWNLOAD_STATUS_CLASSNAME[downloadStatus]}`}
     >
+      <button
+        className="download-item-close"
+        onClick={() => onRemove(unlockLink.id)}
+        disabled={eventSourceState === 1}
+      >
+        ×
+      </button>
       <div className="download-item-header">
         {/* <span className="download-icon"></span>*/}
         <span className="download-filename">
@@ -179,9 +186,15 @@ function DownloadItem({ unlockLink }) {
   );
 }
 
-function DownloadItemError({ unlockLink }) {
+function DownloadItemError({ unlockLink, onRemove }) {
   return (
     <div className={`download-item error`}>
+      <button
+        className="download-item-close"
+        onClick={() => onRemove(unlockLink.id)}
+      >
+        ×
+      </button>
       <div className="download-item-header">
         <span className="download-filename">{unlockLink.error.code}</span>
       </div>
@@ -192,7 +205,7 @@ function DownloadItemError({ unlockLink }) {
   );
 }
 
-export function DownloadList({ unlockLinks }) {
+export function DownloadList({ unlockLinks, removeUnlockLink }) {
   if (unlockLinks.length === 0) {
     return;
   }
@@ -201,9 +214,17 @@ export function DownloadList({ unlockLinks }) {
     <section className="downloads-list">
       {unlockLinks.map((link, index) =>
         link.status === "error" ? (
-          <DownloadItemError key={link.data?.id || index} unlockLink={link} />
+          <DownloadItemError
+            key={link.data?.id || index}
+            unlockLink={link}
+            onRemove={removeUnlockLink}
+          />
         ) : (
-          <DownloadItem key={link.data?.id || index} unlockLink={link} />
+          <DownloadItem
+            key={link.data?.id || index}
+            unlockLink={link}
+            onRemove={removeUnlockLink}
+          />
         ),
       )}
     </section>
