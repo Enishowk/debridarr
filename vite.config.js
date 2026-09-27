@@ -1,4 +1,5 @@
 import preact from "@preact/preset-vite";
+import tailwindcss from "@tailwindcss/vite";
 import { createRequire } from "module";
 import { defineConfig } from "vite";
 import packageJson from "./package.json" with { type: "json" };
@@ -15,5 +16,6 @@ export default defineConfig({
         cwd: createRequire(import.meta.url).resolve("@preact/preset-vite"),
       },
     }),
+    tailwindcss(),
   ],
 });

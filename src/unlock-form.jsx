@@ -47,23 +47,30 @@ export function UnlockForm({ addUnlockLinks }) {
 
   return (
     <section>
-      <h2>
+      <h2 className="mb-5 text-2xl font-semibold">
         Links to unlock
-        <span className="unlock-subtitle"> (One link per line)</span>
+        <span className="text-sm font-normal text-base-content/50">
+          {" "}
+          (One link per line)
+        </span>
       </h2>
       <form onSubmit={handleSubmit}>
         <textarea
-          className="unlock-textarea"
+          className="textarea mb-5 min-h-56 w-full leading-relaxed"
           name="links"
           placeholder="https://example.com/file1&#10;https://example.com/file2"
           rows={5}
           required
         ></textarea>
-        <div className="button-group">
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? <span className="spinner" /> : "Unlock"}
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="submit"
+            className="btn btn-primary flex-1"
+            disabled={loading}
+          >
+            {loading ? <span className="loading loading-spinner" /> : "Unlock"}
           </button>
-          <button type="reset" className="btn" disabled={loading}>
+          <button type="reset" className="btn btn-outline flex-1" disabled={loading}>
             Reset
           </button>
         </div>

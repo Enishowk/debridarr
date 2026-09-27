@@ -9,11 +9,16 @@ const DOWNLOAD_STATUS = {
   ERROR: "ERROR",
 };
 const DOWNLOAD_STATUS_CLASSNAME = {
-  NOT_STARTED: "",
-  IN_PROGRESS: "progress",
-  COMPLETED: "success",
-  ERROR: "error",
+  NOT_STARTED: "border-base-content/20",
+  IN_PROGRESS: "border-primary",
+  COMPLETED: "border-success bg-success/10",
+  ERROR: "border-error bg-error/10",
 };
+
+const ITEM_CLASSNAME = "relative rounded-box border-l-4 bg-base-100 p-4 shadow-sm";
+
+const CLOSE_BUTTON_CLASSNAME =
+  "btn btn-ghost btn-xs btn-circle absolute top-2 right-2 text-lg hover:text-error";
 
 const TRANSFER_INIT = {
   id: undefined,
@@ -120,49 +125,53 @@ function DownloadItem({ unlockLink, onRemove }) {
 
   return (
     <div
-      className={`download-item ${DOWNLOAD_STATUS_CLASSNAME[downloadStatus]}`}
+      className={`${ITEM_CLASSNAME} ${DOWNLOAD_STATUS_CLASSNAME[downloadStatus]}`}
     >
       <button
-        className="download-item-close"
+        className={CLOSE_BUTTON_CLASSNAME}
         onClick={() => onRemove(unlockLink.id)}
         disabled={eventSourceState === 1}
       >
         ×
       </button>
-      <div className="download-item-header">
-        {/* <span className="download-icon"></span>*/}
-        <span className="download-filename">
-          <a href={unlockLink.data.link}>{unlockLink.data.filename}</a>
-        </span>
+      <div className="mb-3 pr-8 font-semibold break-words">
+        <a className="link link-hover" href={unlockLink.data.link}>
+          {unlockLink.data.filename}
+        </a>
       </div>
-      <div className="download-details error">
-        <div className="download-rename">
+      <div className="flex flex-col gap-2 text-sm">
+        <div className="join w-full">
           <input
             type="text"
+            className="input input-sm join-item w-full"
             value={filename}
             onChange={(e) => setFilename(e.target.value)}
           />
           <button
-            className="btn"
+            className="btn btn-sm join-item w-36"
             onClick={handleAutoRenameClick}
             disabled={eventSourceState !== 0}
           >
-            🪄 Rename
+            Auto Rename
           </button>
         </div>
-        <div className="download-path">
+        <div className="join w-full">
           <input
             type="text"
+            className="input input-sm join-item w-full"
             value={path}
             onChange={(e) => setPath(e.target.value)}
           />
           {eventSourceState === 1 ? (
-            <button className="btn btn-error" onClick={handleCancelClick}>
-              ❌ Cancel
+            <button
+              className="btn btn-sm btn-neutral join-item w-36"
+              onClick={handleCancelClick}
+            >
+              Cancel
             </button>
           ) : (
             <button
-              className="btn btn-primary"
+              className="btn btn-sm btn-primary join-item w-36"
               onClick={handleClick}
               disabled={eventSourceState !== 0}
             >
@@ -172,18 +181,18 @@ function DownloadItem({ unlockLink, onRemove }) {
         </div>
         {transfer.downloaded > 0 && (
           <>
-            <div className="download-progress">
+            <div className="flex items-center gap-2">
               {/* Without total size (no content-length), the progress bar is indeterminate */}
               <progress
+                className="progress progress-primary w-full"
                 value={transfer.total ? transfer.progress : undefined}
                 max="100"
-                style={{ marginRight: "8px" }}
               />
               {transfer.total > 0 && (
-                <div className="download-percent">{transfer.progress}%</div>
+                <div className="text-xs">{transfer.progress}%</div>
               )}
             </div>
-            <div className="download-transfer-info">
+            <div className="text-right text-xs text-base-content/60">
               {formatBytes(transfer.downloaded)}
               {transfer.total > 0 && <> / {formatBytes(transfer.total)}</>}
               {transfer.speed > 0 && (
@@ -195,7 +204,7 @@ function DownloadItem({ unlockLink, onRemove }) {
             </div>
           </>
         )}
-        {error && <div className="download-error">{error}</div>}
+        {error && <div className="font-bold text-error">{error}</div>}
       </div>
     </div>
   );
@@ -203,23 +212,19 @@ function DownloadItem({ unlockLink, onRemove }) {
 
 function DownloadItemError({ unlockLink, onRemove }) {
   return (
-    <div className={`download-item error`}>
+    <div className={`${ITEM_CLASSNAME} ${DOWNLOAD_STATUS_CLASSNAME.ERROR}`}>
       <button
-        className="download-item-close"
+        className={CLOSE_BUTTON_CLASSNAME}
         onClick={() => onRemove(unlockLink.id)}
       >
         ×
       </button>
-      <div className="download-item-header">
-        <span className="download-filename">
-          {unlockLink.link || unlockLink.error.code}
-        </span>
+      <div className="mb-3 pr-8 font-semibold break-words">
+        {unlockLink.link || unlockLink.error.code}
       </div>
-      <div className="download-details error">
-        <div className="download-error">
-          {unlockLink.link && `${unlockLink.error.code}: `}
-          {unlockLink.error.message}
-        </div>
+      <div className="text-sm font-bold text-error">
+        {unlockLink.link && `${unlockLink.error.code}: `}
+        {unlockLink.error.message}
       </div>
     </div>
   );
@@ -231,7 +236,7 @@ export function DownloadList({ unlockLinks, removeUnlockLink }) {
   }
 
   return (
-    <section className="downloads-list">
+    <section className="flex flex-col gap-3">
       {unlockLinks.map((link) =>
         link.status === "error" ? (
           <DownloadItemError
