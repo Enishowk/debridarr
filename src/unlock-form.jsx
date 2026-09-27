@@ -30,6 +30,9 @@ export function UnlockForm({ addUnlockLinks }) {
         body: JSON.stringify({ links }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error ${response.status}`);
+      }
       addUnlockLinks(data.results);
     } catch (error) {
       setStatus("error", error.message);

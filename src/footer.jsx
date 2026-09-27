@@ -9,8 +9,14 @@ const getClassnamePremium = (daysLeft) => {
 };
 
 export function Footer() {
-  const { user } = useConfig();
+  const { user, error } = useConfig();
   const { setStatus } = useStatus();
+
+  useEffect(() => {
+    if (error) {
+      setStatus("error", error);
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!user.username) return;

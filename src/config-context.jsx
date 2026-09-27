@@ -9,22 +9,33 @@ export function ConfigProvider({ children }) {
     moviesPath: "/",
   });
   const [user, setUser] = useState({});
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/config").then((response) => {
-      response.json().then((config) => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch("/config");
+        if (!response.ok) {
+          throw new Error(`Unable to load config (HTTP ${response.status})`);
+        }
+        const config = await response.json();
         setPaths({
           seriesPath: config.seriesPath,
           moviesPath: config.moviesPath,
         });
-        setUser(config.user);
-      });
-    });
+        setUser(config.user ?? {});
+        setError(config.error ?? "");
+      } catch (error) {
+        setError(error.message);
+      }
+    };
+    loadConfig();
   }, []);
 
   const value = {
     paths,
     user,
+    error,
   };
 
   return (

@@ -20,7 +20,7 @@ const TRANSFER_INIT = {
   total: 0,
   downloaded: 0,
   progress: 0,
-  speedMbps: 0,
+  speed: 0, // in bytes/s
   remainingTime: 0,
 };
 
@@ -67,6 +67,16 @@ function DownloadItem({ unlockLink, onRemove }) {
         setDownloadStatus(DOWNLOAD_STATUS.ERROR);
         setEventSourceState(0);
         setError(data.error);
+        return;
+      }
+
+      if (data.canceled) {
+        es.close();
+        setDownloadStatus(DOWNLOAD_STATUS.NOT_STARTED);
+        setEventSourceState(0);
+        setTransfer(TRANSFER_INIT);
+        setError("Canceled");
+        return;
       }
 
       setTransfer({
@@ -74,7 +84,7 @@ function DownloadItem({ unlockLink, onRemove }) {
         total: data.total,
         downloaded: data.downloaded,
         progress: data.progress,
-        speedMbps: data.speedMbps,
+        speed: data.speed,
         remainingTime: data.remainingTime,
       });
 
@@ -93,13 +103,19 @@ function DownloadItem({ unlockLink, onRemove }) {
     setFilename(formatFilename(filename));
   };
 
+  // The server confirms the cancellation through the event stream
   const handleCancelClick = async () => {
-    fetch(`/cancel/${transfer.id}`, { method: "DELETE" }).then((response) => {
-      response.json().then((resp) => {
-        setError(resp.status);
-        setTransfer(TRANSFER_INIT);
+    try {
+      const response = await fetch(`/cancel/${transfer.id}`, {
+        method: "DELETE",
       });
-    });
+      if (!response.ok) {
+        const resp = await response.json();
+        setError(resp.error);
+      }
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
   return (
@@ -154,28 +170,27 @@ function DownloadItem({ unlockLink, onRemove }) {
             </button>
           )}
         </div>
-        {transfer.progress > 0 && (
+        {transfer.downloaded > 0 && (
           <>
             <div className="download-progress">
+              {/* Without total size (no content-length), the progress bar is indeterminate */}
               <progress
-                value={transfer.progress}
+                value={transfer.total ? transfer.progress : undefined}
                 max="100"
                 style={{ marginRight: "8px" }}
               />
-              <div className="download-percent">{transfer.progress}%</div>
+              {transfer.total > 0 && (
+                <div className="download-percent">{transfer.progress}%</div>
+              )}
             </div>
             <div className="download-transfer-info">
-              {transfer.downloaded > 0 && (
-                <span>
-                  {formatBytes(transfer.downloaded)} /{" "}
-                  {formatBytes(transfer.total)}
-                  {transfer.speedMbps && (
-                    <span> ({transfer.speedMbps} MB/s)</span>
-                  )}
-                  {transfer.remainingTime && (
-                    <span> - {formatTime(transfer.remainingTime)} left</span>
-                  )}
-                </span>
+              {formatBytes(transfer.downloaded)}
+              {transfer.total > 0 && <> / {formatBytes(transfer.total)}</>}
+              {transfer.speed > 0 && (
+                <span> ({formatBytes(transfer.speed)}/s)</span>
+              )}
+              {transfer.remainingTime > 0 && (
+                <span> - {formatTime(transfer.remainingTime)} left</span>
               )}
             </div>
           </>
@@ -196,10 +211,15 @@ function DownloadItemError({ unlockLink, onRemove }) {
         ×
       </button>
       <div className="download-item-header">
-        <span className="download-filename">{unlockLink.error.code}</span>
+        <span className="download-filename">
+          {unlockLink.link || unlockLink.error.code}
+        </span>
       </div>
       <div className="download-details error">
-        <div className="download-error">{unlockLink.error.message}</div>
+        <div className="download-error">
+          {unlockLink.link && `${unlockLink.error.code}: `}
+          {unlockLink.error.message}
+        </div>
       </div>
     </div>
   );
@@ -212,16 +232,16 @@ export function DownloadList({ unlockLinks, removeUnlockLink }) {
 
   return (
     <section className="downloads-list">
-      {unlockLinks.map((link, index) =>
+      {unlockLinks.map((link) =>
         link.status === "error" ? (
           <DownloadItemError
-            key={link.data?.id || index}
+            key={link.id}
             unlockLink={link}
             onRemove={removeUnlockLink}
           />
         ) : (
           <DownloadItem
-            key={link.data?.id || index}
+            key={link.id}
             unlockLink={link}
             onRemove={removeUnlockLink}
           />
