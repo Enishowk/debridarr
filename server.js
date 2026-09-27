@@ -54,24 +54,6 @@ if (trustProxy === "true") {
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Authentication, before assets and routes so everything is protected
-const authEnabled = Boolean(
-  process.env.AUTH_USERNAME && process.env.AUTH_PASSWORD,
-);
-if (authEnabled) {
-  app.use(
-    createAuth({
-      username: process.env.AUTH_USERNAME,
-      password: process.env.AUTH_PASSWORD,
-    }),
-  );
-} else {
-  console.warn(
-    "⚠️  AUTH_USERNAME and AUTH_PASSWORD are not set, the app is open to anyone who can reach it",
-  );
-}
-
-// Add Vite or respective production middlewares
 /** @type {import('vite').ViteDevServer | undefined} */
 let vite;
 if (!isProduction) {
@@ -81,6 +63,35 @@ if (!isProduction) {
     appType: "custom",
     base,
   });
+}
+
+// App renderer and styles, always fresh in development
+/** @returns {Promise<typeof import('./src/entry-server.jsx')>} */
+const loadEntryServer = () =>
+  isProduction
+    ? import("./dist/server/entry-server.js")
+    : vite.ssrLoadModule("/src/entry-server.jsx");
+
+// Authentication, before assets and routes so everything is protected
+const authEnabled = Boolean(
+  process.env.AUTH_USERNAME && process.env.AUTH_PASSWORD,
+);
+if (authEnabled) {
+  app.use(
+    createAuth({
+      username: process.env.AUTH_USERNAME,
+      password: process.env.AUTH_PASSWORD,
+      getStyles: async () => (await loadEntryServer()).styles,
+    }),
+  );
+} else {
+  console.warn(
+    "⚠️  AUTH_USERNAME and AUTH_PASSWORD are not set, the app is open to anyone who can reach it",
+  );
+}
+
+// Add Vite or respective production middlewares
+if (!isProduction) {
   app.use(vite.middlewares);
 } else {
   const compression = (await import("compression")).default;
@@ -335,17 +346,14 @@ app.use("*all", async (req, res) => {
 
     /** @type {string} */
     let template;
-    /** @type {import('./src/entry-server.js').render} */
-    let render;
     if (!isProduction) {
       // Always read fresh template in development
       template = await fs.promises.readFile("./index.html", "utf-8");
       template = await vite.transformIndexHtml(url, template);
-      render = (await vite.ssrLoadModule("/src/entry-server.jsx")).render;
     } else {
       template = templateHtml;
-      render = (await import("./dist/server/entry-server.js")).render;
     }
+    const { render } = await loadEntryServer();
 
     let rendered = await render(url);
 
