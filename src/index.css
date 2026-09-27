@@ -325,6 +325,28 @@ progress::-moz-progress-bar {
     border-radius: 10px;
 }
 
+/* Indeterminate progress, when the total size is unknown */
+progress:not([value]) {
+    background: linear-gradient(90deg, #e5e7eb 25%, #667eea 50%, #e5e7eb 75%);
+    background-size: 200% 100%;
+    animation: indeterminate 1.5s linear infinite;
+}
+progress:not([value])::-webkit-progress-bar {
+    background: transparent;
+}
+progress:not([value])::-moz-progress-bar {
+    background: transparent;
+}
+
+@keyframes indeterminate {
+    from {
+        background-position: 200% 0;
+    }
+    to {
+        background-position: 0 0;
+    }
+}
+
 .footer {
     text-align: center;
     padding-top: 20px;
@@ -341,6 +363,22 @@ progress::-moz-progress-bar {
 }
 .premium-info.danger {
     color: #dc2626;
+}
+
+.logout-form {
+    display: inline;
+    margin-left: 8px;
+}
+.logout-button {
+    border: none;
+    background: transparent;
+    color: #999;
+    font-size: 1em;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.logout-button:hover {
+    color: #667eea;
 }
 
 /* Responsive */

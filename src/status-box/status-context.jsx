@@ -12,7 +12,7 @@ export function StatusProvider({ children }) {
   const timeoutRef = useRef(null);
   const setStatus = useCallback((type, message) => {
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef);
+      clearTimeout(timeoutRef.current);
     }
 
     setStatusState({ type, message });

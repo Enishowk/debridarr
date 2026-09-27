@@ -9,8 +9,14 @@ const getClassnamePremium = (daysLeft) => {
 };
 
 export function Footer() {
-  const { user } = useConfig();
+  const { user, authEnabled, error } = useConfig();
   const { setStatus } = useStatus();
+
+  useEffect(() => {
+    if (error) {
+      setStatus("error", error);
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!user.username) return;
@@ -42,6 +48,13 @@ export function Footer() {
       <a href="https://github.com/enishowk/debridarr">
         Debridarr v{APP_VERSION}
       </a>
+      {authEnabled && (
+        <form className="logout-form" method="post" action="/logout">
+          <button type="submit" className="logout-button">
+            Logout
+          </button>
+        </form>
+      )}
     </footer>
   );
 }
