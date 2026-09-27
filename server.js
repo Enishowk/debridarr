@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { Readable, Transform } from "stream";
 import { pipeline } from "stream/promises";
+import { createAuth, sameOrigin } from "./security.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 const port = process.env.PORT || 5173;
@@ -24,15 +25,6 @@ const controllers = new Map();
 // Links returned by AllDebrid, the only ones allowed to be downloaded (prevents SSRF)
 const unlockedLinks = new Set();
 
-// Block cross-site requests (CSRF), browsers send Sec-Fetch-Site on every request
-const sameOrigin = (req, res, next) => {
-  const site = req.get("sec-fetch-site");
-  if (site && site !== "same-origin" && site !== "none") {
-    return res.status(403).json({ error: "Cross-site request blocked" });
-  }
-  next();
-};
-
 // Resolve the target file and make sure it stays inside rootPath
 const resolveFilePath = (dirPath = "", filename = "") => {
   const name = path.basename(filename);
@@ -48,8 +40,36 @@ const resolveFilePath = (dirPath = "", filename = "") => {
 
 // Create http server
 const app = express();
+
+// Behind a reverse proxy, trust X-Forwarded-* headers for client IP (login rate limit)
+// and HTTPS detection (Secure cookie). Values: "true", number of hops, IPs or subnets
+const trustProxy = process.env.TRUST_PROXY;
+if (trustProxy === "true") {
+  app.set("trust proxy", true);
+} else if (/^\d+$/.test(trustProxy ?? "")) {
+  app.set("trust proxy", Number(trustProxy));
+} else if (trustProxy && trustProxy !== "false") {
+  app.set("trust proxy", trustProxy);
+}
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Authentication, before assets and routes so everything is protected
+const authEnabled = Boolean(
+  process.env.AUTH_USERNAME && process.env.AUTH_PASSWORD,
+);
+if (authEnabled) {
+  app.use(
+    createAuth({
+      username: process.env.AUTH_USERNAME,
+      password: process.env.AUTH_PASSWORD,
+    }),
+  );
+} else {
+  console.warn(
+    "⚠️  AUTH_USERNAME and AUTH_PASSWORD are not set, the app is open to anyone who can reach it",
+  );
+}
 
 // Add Vite or respective production middlewares
 /** @type {import('vite').ViteDevServer | undefined} */
@@ -113,6 +133,7 @@ app.get("/config", async (_req, res) => {
   const config = {
     moviesPath: process.env.MOVIES_PATH || "/",
     seriesPath: process.env.SERIES_PATH || "/",
+    authEnabled,
     user: null,
   };
 

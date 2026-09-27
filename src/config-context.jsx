@@ -9,12 +9,17 @@ export function ConfigProvider({ children }) {
     moviesPath: "/",
   });
   const [user, setUser] = useState({});
+  const [authEnabled, setAuthEnabled] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const loadConfig = async () => {
       try {
         const response = await fetch("/config");
+        if (response.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
         if (!response.ok) {
           throw new Error(`Unable to load config (HTTP ${response.status})`);
         }
@@ -24,6 +29,7 @@ export function ConfigProvider({ children }) {
           moviesPath: config.moviesPath,
         });
         setUser(config.user ?? {});
+        setAuthEnabled(config.authEnabled);
         setError(config.error ?? "");
       } catch (error) {
         setError(error.message);
@@ -35,6 +41,7 @@ export function ConfigProvider({ children }) {
   const value = {
     paths,
     user,
+    authEnabled,
     error,
   };
 

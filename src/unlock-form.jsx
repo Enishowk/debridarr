@@ -29,6 +29,10 @@ export function UnlockForm({ addUnlockLinks }) {
         },
         body: JSON.stringify({ links }),
       });
+      if (response.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || `HTTP error ${response.status}`);

@@ -11,6 +11,11 @@ services:
     # - /host_volume:/container_volume
     environment:
       - ALL_DEBRID_API_KEY=your_api_key_here
+      # Login credentials, the app is open to anyone who can reach it if not set
+      - AUTH_USERNAME=admin
+      - AUTH_PASSWORD=change_me
+      # Optional, behind a reverse proxy: "true", number of hops or proxy IPs/subnets
+      # - TRUST_PROXY=172.16.0.0/12
       - ROOT_PATH=/mnt/nas/downloads
       # Optional, relative paths use by the front to pre-fill the file path. ROOT_PATH/MOVIES_PATH
       - MOVIES_PATH=/movies # Optional
