@@ -51,7 +51,7 @@ Copy the env file and modify the variables.
 Install dependencies.
 
 ```bash
-  npm run install
+  npm install
   npm run dev
 ```
     
