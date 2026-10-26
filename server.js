@@ -25,17 +25,21 @@ const controllers = new Map();
 // Links returned by AllDebrid, the only ones allowed to be downloaded (prevents SSRF)
 const unlockedLinks = new Set();
 
-// Resolve the target file and make sure it stays inside rootPath
+// Resolve a directory and make sure it stays inside rootPath
+const resolveDirPath = (dirPath = "") => {
+  const dir = path.resolve(rootPath, `.${path.sep}${dirPath}`);
+  if (dir !== rootPath && !dir.startsWith(rootPath + path.sep)) {
+    throw new Error("Invalid path");
+  }
+  return dir;
+};
+
 const resolveFilePath = (dirPath = "", filename = "") => {
   const name = path.basename(filename);
   if (!name || name === "." || name === "..") {
     throw new Error("Invalid filename");
   }
-  const dir = path.resolve(rootPath, `.${path.sep}${dirPath}`);
-  if (dir !== rootPath && !dir.startsWith(rootPath + path.sep)) {
-    throw new Error("Invalid path");
-  }
-  return path.join(dir, name);
+  return path.join(resolveDirPath(dirPath), name);
 };
 
 // Create http server
@@ -159,6 +163,30 @@ app.get("/config", async (_req, res) => {
   res.json(config);
 });
 
+app.get("/directories", sameOrigin, async (req, res) => {
+  let dir;
+  try {
+    dir = resolveDirPath(String(req.query.path ?? ""));
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  try {
+    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+    const directories = entries
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+      .map((entry) => entry.name)
+      .sort((a, b) => a.localeCompare(b));
+    res.json({ directories });
+  } catch (error) {
+    // Not created yet, it will be on download
+    if (error.code === "ENOENT" || error.code === "ENOTDIR") {
+      return res.json({ directories: [] });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const MAX_UNLOCK_LINKS = 50;
 const UNLOCK_CONCURRENCY = 5;
 
@@ -244,8 +272,10 @@ app.get("/download", sameOrigin, async (req, res) => {
     send({ error: error.message });
     return res.end();
   }
-  if (!fs.existsSync(path.dirname(filePath))) {
-    send({ error: `Path ${path.dirname(filePath)} doesn't exist` });
+  try {
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  } catch (error) {
+    send({ error: `Unable to create ${path.dirname(filePath)}: ${error.code}` });
     return res.end();
   }
 

@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { useConfig } from "./config-context";
+import { useDirectories } from "./use-directories";
 import { formatBytes, formatFilename, formatTime, isSeries } from "./utils";
 
 const DOWNLOAD_STATUS = {
@@ -36,9 +37,13 @@ function DownloadItem({ unlockLink, onRemove }) {
     DOWNLOAD_STATUS.NOT_STARTED,
   );
   const [filename, setFilename] = useState(unlockLink.data?.filename || "");
-  const [path, setPath] = useState(
-    isSeries(unlockLink.data?.filename) ? paths.seriesPath : paths.moviesPath,
-  );
+  const [path, setPath] = useState(() => {
+    const dir = isSeries(unlockLink.data?.filename)
+      ? paths.seriesPath
+      : paths.moviesPath;
+    return dir.endsWith("/") ? dir : `${dir}/`;
+  });
+  const directories = useDirectories(path);
   const [eventSourceState, setEventSourceState] = useState(0);
   const [transfer, setTransfer] = useState(TRANSFER_INIT);
 
@@ -160,8 +165,14 @@ function DownloadItem({ unlockLink, onRemove }) {
             type="text"
             className="input input-sm join-item w-full"
             value={path}
-            onChange={(e) => setPath(e.target.value)}
+            list={`directories-${unlockLink.id}`}
+            onInput={(e) => setPath(e.target.value)}
           />
+          <datalist id={`directories-${unlockLink.id}`}>
+            {directories.map((directory) => (
+              <option key={directory} value={directory} />
+            ))}
+          </datalist>
           {eventSourceState === 1 ? (
             <button
               className="btn btn-sm btn-neutral join-item w-36"
